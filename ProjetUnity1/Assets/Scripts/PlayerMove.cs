@@ -1,17 +1,21 @@
 using System;
 using UnityEngine;
- 
+
 public class PlayerMove : MonoBehaviour
 {
     [SerializeField] private AudioClip sfxJump;
- 
+    [SerializeField] private float moveSpeed = 7f;
+    [SerializeField] private float jumpForce = 30f;
+    [SerializeField] private Transform groundCheck;
+    [SerializeField] private LayerMask groundLayer;
+
     private AudioSource audioSource;
     private float x;
     private SpriteRenderer spriteRenderer;
     private Animator animator;
     private Rigidbody2D rb;
-    private bool jump = false;
- 
+    private bool isGrounded;
+
     void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
@@ -22,45 +26,54 @@ public class PlayerMove : MonoBehaviour
 
     void Update()
     {
-        x = Input.GetAxis("Horizontal");
-        animator.SetFloat("Speed", Mathf.Abs(x));
-        transform.Translate(Vector2.right * 7f * Time.deltaTime * x);
 
+        // Déplacement horizontal
+        x = Input.GetAxisRaw("Horizontal"); 
+        animator.SetFloat("Speed", Mathf.Abs(x));
+
+        // Flip du sprite
         if (x > 0f) spriteRenderer.flipX = false;
         if (x < 0f) spriteRenderer.flipX = true;
 
-        if (Input.GetKeyDown(KeyCode.UpArrow))
+        // Vérifier si on touche le sol
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, 0.1f, groundLayer);
+        animator.SetBool("isGrounded", isGrounded);
+
+        // Saut
+        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
         {
-            jump = true;
+            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
             audioSource.PlayOneShot(sfxJump);
+            Debug.Log("Il saute");
         }
 
-        // Faut maintenir
-        // if (Input.GetKey(KeyCode.Space))
-        // {
-        //     animator.SetBool("IsAttacking", true);
-        // }
-        // else
-        // {
-        //     animator.SetBool("IsAttacking", false);
-        // }
+        // Attaques
         if (Input.GetKeyDown(KeyCode.J))
         {
             Debug.Log("Il frappe");
-            animator.SetTrigger("Attack");  
+            animator.SetTrigger("Kick");
         }
+
+        if (Input.GetKeyDown(KeyCode.K)){
+            animator.SetTrigger("leftPunch");
+        }
+        if (Input.GetKeyDown(KeyCode.L)){
+            animator.SetTrigger("uppercut");
+        }
+        // if (Input.GetKeyDown(KeyCode.L)){
+        //     animator.SetTrigger("rightPunch");
+        // }
+
+        // Combo
+        // if (Input.GetKeyDown(KeyCode.O)){
+        //     animator.SetTrigger("uppercut") & animator.SetTrigger("uppercut");
+        // }
     }
- 
+
     private void FixedUpdate()
     {
-        transform.Translate(Vector2.right * 7f * Time.deltaTime * x);
- 
-        if (jump)
-        {
-            jump = false;
-            rb.AddForce(Vector2.up * 900f);
-        }
- 
-    
+        // Déplacement physique
+        rb.velocity = new Vector2(x * moveSpeed, rb.velocity.y);
     }
+
 }
